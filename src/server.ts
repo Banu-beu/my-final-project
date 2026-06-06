@@ -1,5 +1,4 @@
 import dotenv from "dotenv";
-// Dəyişənlər mütləq hər şeydən əvvəl yüklənməlidir!
 dotenv.config();
 
 import express from "express";
@@ -10,7 +9,6 @@ import { setupSwagger } from "./swagger/swagger"; // Swagger importu
 const app = express();
 app.use(express.json());
 
-// Swagger-i işə salırıq (Bütün YAML-ları oxuyacaq)
 setupSwagger(app);
 
 import clientRoute from './routers/client';
