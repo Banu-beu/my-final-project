@@ -27,7 +27,9 @@ app.use(`${adminBaseUrl}/product`, productRoute);
 
 
 const PORT = process.env.PORT || 3000;
-
+app.use("/", (req, res) => {
+  res.send("Start App");
+});
 
 app.listen(PORT, () => {
   console.log(`Express app running on port ${PORT}`);
