@@ -1,5 +1,5 @@
 import dotenv from "dotenv";
-// 1. Dəyişənlər mütləq hər şeydən əvvəl yüklənməlidir!
+// Dəyişənlər mütləq hər şeydən əvvəl yüklənməlidir!
 dotenv.config();
 
 import express from "express";
@@ -16,17 +16,20 @@ setupSwagger(app);
 import clientRoute from './routers/client';
 app.use("/api/v1", clientRoute);
 
+
 const adminBaseUrl = "/api/v1/ad";
 
 import productRoute from "./modules/products/product.route";
 app.use(`${adminBaseUrl}/product`, productRoute);
 
-// Sənin sync kodun olduğu kimi buradadır, toxunulmadı:
+
+// Sənin sync koduna toxunulmadı, necə var elə də qaldı:
 // (async () => {
 //   await sequelize.sync({alter:true});
 // })();
 
-// Railway portu dinamik təyin edir, ona görə bura mütləq process.env.PORT yazılmalıdır
+
+// Railway portu dinamik təyin edir, ona görə bura process.env.PORT yazdıq
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
