@@ -21,15 +21,15 @@ import productRoute from "./modules/products/product.route";
 app.use(`${adminBaseUrl}/product`, productRoute);
 
 
-// (async () => {
-//   await sequelize.sync({alter:true});
-// })();
+(async () => {
+  await sequelize.sync({alter:true});
+})();
 
-
-const PORT = process.env.PORT || 3000;
 app.use("/", (req, res) => {
   res.send("Start App");
 });
+
+const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
   console.log(`Express app running on port ${PORT}`);
