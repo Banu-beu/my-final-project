@@ -9,9 +9,12 @@ const swaggerDefinition = {
     version: '0.0.1',
     description: 'Api documentation prepared for Express + TypeScript project',
   },
+  // Servers hissəsi dinamik edildi: Canlıda Railway linkini, lokalda localhost-u götürəcək
   servers: [
     {
-      url: 'http://localhost:3000', // Yeni portunuza uyğunlaşdırıldı (3000)
+      url: process.env.RAILWAY_STATIC_URL 
+        ? `https://${process.env.RAILWAY_STATIC_URL}` 
+        : 'http://localhost:3000',
     },
   ],
   components: {
