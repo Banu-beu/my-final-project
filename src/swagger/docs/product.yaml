@@ -1,0 +1,387 @@
+paths:
+  # Client tərəfin GET endpoint-ləri (Bütün məhsullar və filtrlər)
+  /api/v1/products:
+    get:
+      tags:
+        - Products (Client)
+      summary: Bütün məhsulları filtrlərlə gətirir
+      description: Axtarış, qiymət, stok, reytinq aralıqları və sıralama (sort) parametrləri ilə məhsulları filterləmək üçün istifadə olunur.
+      parameters:
+        - name: search
+          in: query
+          required: false
+          description: Az, Ru, En başlıqlarında və ya slug-da axtarış sözü
+          schema:
+            type: string
+        - name: sort
+          in: query
+          required: false
+          description: Sıralama növü
+          schema:
+            type: string
+            enum: [cheapToExpensive, expensiveToCheap, alphabetical]
+        - name: priceUnder
+          in: query
+          required: false
+          description: Bu qiymətdən aşağı və ya bərabər olanlar
+          schema:
+            type: number
+        - name: priceOver
+          in: query
+          required: false
+          description: Bu qiymətdən yuxarı və ya bərabər olanlar
+          schema:
+            type: number
+        - name: minPrice
+          in: query
+          required: false
+          description: Minimum qiymət aralığı
+          schema:
+            type: number
+        - name: maxPrice
+          in: query
+          required: false
+          description: Maksimum qiymət aralığı
+          schema:
+            type: number
+        - name: stockUnder
+          in: query
+          required: false
+          description: Bu stok miqdarından aşağı olanlar
+          schema:
+            type: integer
+        - name: stockOver
+          in: query
+          required: false
+          description: Bu stok miqdarından yuxarı olanlar
+          schema:
+            type: integer
+        - name: minStock
+          in: query
+          required: false
+          description: Minimum stok aralığı
+          schema:
+            type: integer
+        - name: maxStock
+          in: query
+          required: false
+          description: Maksimum stok aralığı
+          schema:
+            type: integer
+        - name: ratingUnder
+          in: query
+          required: false
+          description: Bu reytinqdən aşağı olanlar
+          schema:
+            type: number
+        - name: ratingOver
+          in: query
+          required: false
+          description: Bu reytinqdən yuxarı olanlar
+          schema:
+            type: number
+        - name: minRating
+          in: query
+          required: false
+          description: Minimum reytinq aralığı
+          schema:
+            type: number
+        - name: maxRating
+          in: query
+          required: false
+          description: Maksimum reytinq aralığı
+          schema:
+            type: number
+      responses:
+        '200':
+          description: Məhsullar uğurla listələndi
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  count:
+                    type: integer
+                    example: 12
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ProductResponse'
+        '500':
+          description: Daxili server xətası
+
+  # Client tərəfin ID-yə görə tək məhsul gətirmə endpoint-i
+  /api/v1/products/{id}:
+    get:
+      tags:
+        - Products (Client)
+      summary: ID-yə əsasən tək bir məhsulun məlumatını gətirir
+      description: ID parametrini göndərməklə məhsulun bütün detallarını əldə edə bilərsiniz.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Məhsulun unikal ID-si
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Məhsul uğurla tapıldı
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/ProductResponse'
+        '404':
+          description: Məhsul tapılmadı
+        '500':
+          description: Daxili server xətası
+
+  # Admin tərəfin Məhsul Yaratma endpoint-i
+  /api/v1/ad/product:
+    post:
+      tags:
+        - Products (Admin)
+      summary: Yeni məhsul yaradır
+      description: Yeni məhsul məlumatlarını bazaya əlavə edir (Joi validation mövcuddur).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductInput'
+      responses:
+        '200':
+          description: Məhsul uğurla yaradıldı
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  message:
+                    type: string
+                    example: Product created successfully
+                  data:
+                    $ref: '#/components/schemas/ProductResponse'
+        '400':
+          description: Validasiya xətası (Joi tərəfindən)
+        '500':
+          description: Daxili server xətası
+
+  # Admin tərəfin Redaktə və Silmə endpoint-ləri
+  /api/v1/ad/product/{id}:
+    put:
+      tags:
+        - Products (Admin)
+      summary: Mövcud məhsulu redaktə edir
+      description: ID-yə əsasən məhsulun məlumatlarını yeniləyir.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Yenilənəcək məhsulun ID-si
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductInput'
+      responses:
+        '200':
+          description: Məhsul uğurla yeniləndi
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  message:
+                    type: string
+                    example: Product updated successfully
+                  data:
+                    $ref: '#/components/schemas/ProductResponse'
+        '400':
+          description: Validasiya xətası
+        '404':
+          description: Məhsul tapılmadı
+        '500':
+          description: Daxili server xətası
+
+    delete:
+      tags:
+        - Products (Admin)
+      summary: Məhsulu silir
+      description: ID-yə əsasən məhsulu verilənlər bazasından tamamilə silir.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Silinəcək məhsulun ID-si
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Məhsul uğurla silindi
+        '404':
+          description: Məhsul tapılmadı
+        '500':
+          description: Daxili server xətası
+
+components:
+  schemas:
+    ProductInput:
+      type: object
+      required:
+        - slug
+        - titleAz
+        - titleRu
+        - titleEn
+        - price
+        - stock
+        - installmentPrice
+      properties:
+        slug:
+          type: string
+          example: "iphone-15-pro-max"
+        # images:
+        #   type: array
+        #   items:
+        #     type: string
+        titleAz:
+          type: string
+          example: "iPhone 15 Pro Max 256GB"
+        titleRu:
+          type: string
+          example: "iPhone 15 Pro Max 256 ГБ"
+        titleEn:
+          type: string
+          example: "iPhone 15 Pro Max 256GB"
+        descriptionAz:
+          type: string
+          nullable: true
+          example: "Əla vəziyyətdə smartfon"
+        descriptionRu:
+          type: string
+          nullable: true
+          example: "Смартфон в отличном состоянии"
+        descriptionEn:
+          type: string
+          nullable: true
+          example: "Smartphone in excellent condition"
+        price:
+          type: integer
+          example: 3200
+        discountPrice:
+          type: integer
+          nullable: true
+          example: 2999
+        # categoryId:
+        #   type: integer
+        # brandId:
+        #   type: integer
+        stock:
+          type: integer
+          example: 15
+        installmentPrice:
+          type: integer
+          example: 133
+        # installmentMonths:
+        #   type: array
+        #   items:
+        #     type: integer
+        isAction:
+          type: boolean
+          example: false
+        actionTextAz:
+          type: string
+          nullable: true
+          example: "0 0 18 ay"
+        actionTextRu:
+          type: string
+          nullable: true
+          example: "0 0 18 мес"
+        actionTextEn:
+          type: string
+          nullable: true
+          example: "0 0 18 months"
+        rating:
+          type: number
+          example: 4.5
+        reviewCount:
+          type: integer
+          example: 12
+
+    ProductResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        slug:
+          type: string
+          example: "iphone-15-pro-max"
+        titleAz:
+          type: string
+          example: "iPhone 15 Pro Max 256GB"
+        titleRu:
+          type: string
+          example: "iPhone 15 Pro Max 256 ГБ"
+        titleEn:
+          type: string
+          example: "iPhone 15 Pro Max 256GB"
+        descriptionAz:
+          type: string
+          nullable: true
+        descriptionRu:
+          type: string
+          nullable: true
+        descriptionEn:
+          type: string
+          nullable: true
+        price:
+          type: integer
+          example: 3200
+        discountPrice:
+          type: integer
+          nullable: true
+        stock:
+          type: integer
+          example: 15
+        installmentPrice:
+          type: integer
+          example: 133
+        isAction:
+          type: boolean
+          example: false
+        actionTextAz:
+          type: string
+          nullable: true
+        actionTextRu:
+          type: string
+          nullable: true
+        actionTextEn:
+          type: string
+          nullable: true
+        rating:
+          type: number
+          example: 4.5
+        reviewCount:
+          type: integer
+          example: 12
+        createdAt:
+          type: string
+          format: date-time
+          example: "2026-06-06T12:00:00.000Z"
+        updatedAt:
+          type: string
+          format: date-time
+          example: "2026-06-06T12:30:00.000Z"
