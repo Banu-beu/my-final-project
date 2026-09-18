@@ -1,7 +1,6 @@
 import fs from "fs";
 import path from "path";
 
-// Çoxlu şəkilləri sil
 export function deleteManyOldImages(imagePaths: string[]): void {
   imagePaths.forEach((item: string) => {
     const fullImagePath: string = path.join(item);
@@ -15,7 +14,6 @@ export function deleteManyOldImages(imagePaths: string[]): void {
   });
 }
 
-// Tək şəkli sil
 export function deleteSingleOldImage(imagePath: string | null | undefined): void {
   if (!imagePath) return;
   const fullImagePath: string = path.join(imagePath);

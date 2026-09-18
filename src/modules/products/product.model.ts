@@ -1,9 +1,7 @@
 import { DataTypes, Model, Optional } from "sequelize";
-import sequelize from "../../config/connectdb";
+import sequelize from "../../config/connection";
 import Joi from "joi";
 import { ProductAttributes } from "./product.type";
-
-
 
 interface ProductCreationAttributes extends Optional<ProductAttributes, "id" | "rating" | "reviewCount" | "isAction"> {}
 
@@ -11,7 +9,9 @@ class Products extends Model<ProductAttributes, ProductCreationAttributes>
   implements ProductAttributes {
   public id!: number;
   public slug!: string;
-  //public images!: string;
+  public coverImage!: string;
+  public images!: string[];
+
   public titleAz!: string;
   public titleRu!: string;
   public titleEn!: string;
@@ -20,8 +20,8 @@ class Products extends Model<ProductAttributes, ProductCreationAttributes>
   public descriptionRu!: string | null;
   public price!: number;
   public discountPrice!: number | null;
-  //public categoryId!: number;
-  //public brandId!: number;
+  public categoryId!: number;
+  public brandId!: number;
   public stock!: number;
   public installmentPrice!: number;
   //public installmentMonths!: string;
@@ -40,16 +40,19 @@ Products.init(
       autoIncrement: true,
       primaryKey: true,
     },
-
     slug: {
       type: DataTypes.STRING,
       allowNull: false,
       unique: true,
     },
-    // images: { 
-    //   type: DataTypes.TEXT, 
-    //   allowNull: false 
-    // },
+    coverImage: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    images: {
+      type: DataTypes.JSON,
+      defaultValue: [],
+    },
     titleAz: { 
       type: DataTypes.STRING, 
       allowNull: false 
@@ -58,7 +61,6 @@ Products.init(
       type: DataTypes.STRING, 
       allowNull: false 
     },
-
     titleEn: { 
       type: DataTypes.STRING, 
       allowNull: false 
@@ -83,15 +85,15 @@ Products.init(
       type: DataTypes.INTEGER, 
       allowNull: true, 
       defaultValue: null 
-     },
-    // categoryId: {
-    //   type: DataTypes.INTEGER,
-    //   allowNull: false,
-    // },
-    // brandId: {
-    //   type: DataTypes.INTEGER,
-    //   allowNull: false,
-    // },
+    },
+    categoryId: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+    },
+    brandId: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+    },
     stock: { 
       type: DataTypes.INTEGER, 
       allowNull: false, 
@@ -136,17 +138,18 @@ Products.init(
 const validateProduct = (data: Partial<ProductAttributes>) => {
   const schema = Joi.object({
     slug: Joi.string().required(),
-    //images: Joi.array().items(Joi.string()).required(),
-    titleAz: Joi.string().required(),
-    titleRu: Joi.string().required(),
-    titleEn: Joi.string().required(),
+    coverImage: Joi.string().optional(),
+    images: Joi.array().items(Joi.string()).optional(),
+    titleAz: Joi.string().optional(),
+    titleRu: Joi.string().optional(),
+    titleEn: Joi.string().optional(),
     descriptionAz: Joi.string().allow("", null).optional(),
     descriptionEn: Joi.string().allow("", null).optional(),
     descriptionRu: Joi.string().allow("", null).optional(),    
     price: Joi.number().positive().required(),
     discountPrice: Joi.number().positive().allow(null).optional(),
-    //categoryId: Joi.number().integer().required(),
-    //brandId: Joi.number().integer().required(),
+    categoryId: Joi.number().integer().required(),
+    brandId: Joi.number().integer().required(),
     stock: Joi.number().integer().min(0).required(),
     installmentPrice: Joi.number().positive().required(),
    // installmentMonths: Joi.array().items(Joi.number().integer()).required(),

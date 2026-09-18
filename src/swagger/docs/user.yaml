@@ -1,0 +1,173 @@
+openapi: 3.0.0
+info:
+  title: User və Auth API Sənədləşməsi
+  version: 1.0.0
+  description: İstifadəçi qeydiyyatı, giriş-çıxış və idarəetmə endpointləri.
+
+paths:
+  # 🔓 QEYDİYYAT VƏ GİRİŞ (HAMI ÜÇÜN AÇIQ - /api/v1/...)
+  /register:
+    post:
+      summary: Yeni istifadəçi qeydiyyatı
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [fullname, email, password]
+              properties:
+                fullname:
+                  type: string
+                  example: "Banu Abdullazade"
+                email:
+                  type: string
+                  format: email
+                  example: "banu@example.com"
+                password:
+                  type: string
+                  example: "password123"
+      responses:
+        201:
+          description: Uğurlu qeydiyyat
+        400:
+          description: Validasiya xətası
+
+  /login:
+    post:
+      summary: Sistemə giriş edib token almaq
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: "banu@example.com"
+                password:
+                  type: string
+                  example: "password123"
+      responses:
+        200:
+          description: Giriş uğurlu
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Login is successfull"
+                  accessToken:
+                    type: string
+                  refreshToken:
+                    type: string
+        400:
+          description: Yanlış məlumatlar
+
+  /logout:
+    post:
+      summary: Sistemdən çıxış etmək
+      tags: [Auth]
+      security:
+        - BearerAuth: []
+      responses:
+        200:
+          description: Çıxış uğurlu
+        401:
+          description: Autentifikasiya olunmayıb
+
+  # 🔐 İSTİFADƏÇİ İDARƏETMƏSİ (ADMIN ENDPOINTLƏRİ - /api/v1/ad/user/...)
+  /user:
+    get:
+      summary: Bütün istifadəçilərin siyahısı (Yalnız Admin)
+      tags: [Users]
+      security:
+        - BearerAuth: []
+      responses:
+        200:
+          description: İstifadəçilər uğurla gətirildi
+        401:
+          description: Token tapılmadı və ya keçərsizdir
+        403:
+          description: İcazə yoxdur (Admin deyilsiniz)
+
+  /user/{id}:
+    get:
+      summary: ID-yə görə tək istifadəçi məlumatı (Yalnız Admin)
+      tags: [Users]
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          description: İstifadəçi tapıldı
+        404:
+          description: İstifadəçi tapılmadı
+
+    put:
+      summary: İstifadəçi məlumatlarını yeniləmək (Yalnız Admin)
+      tags: [Users]
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserUpdateInput'
+      responses:
+        200:
+          description: İstifadəçi uğurla yeniləndi
+
+    delete:
+      summary: İstifadəçini silmək (Yalnız Admin)
+      tags: [Users]
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          description: İstifadəçi silindi
+
+components:
+  schemas:
+    UserUpdateInput:
+      type: object
+      properties:
+        fullname:
+          type: string
+          example: "Banu Abdullazade (Edited)"
+        email:
+          type: string
+          format: email
+          example: "banu.new@example.com"
+        phone:
+          type: string
+          example: "+994559876543"
+        role:
+          type: string
+          enum: [user, admin]
+          example: "admin"

@@ -9,54 +9,55 @@ const swaggerDefinition = {
     version: '0.0.1',
     description: 'Api documentation prepared for Express + TypeScript project',
   },
-  // Servers hissəsi dinamik edildi: Canlıda Railway linkini, lokalda localhost-u götürəcək
   servers: [
     {
       url: process.env.RAILWAY_STATIC_URL 
-        ? `https://${process.env.RAILWAY_STATIC_URL}` 
-        : 'http://localhost:3000',
+        ? `https://${process.env.RAILWAY_STATIC_URL}/api/v1` 
+        : 'http://localhost:3000/api/v1',
+      description: 'Əsas API Serveri (Bütün sorğuların başına /api/v1 qoyur)'
     },
   ],
   components: {
+    // 👇 BURANI TAMAMİLƏ SƏNİN STANDARTA UYĞUN DƏYİŞDİK
     securitySchemes: {
-      customAuth: {
-        type: 'apiKey',
-        in: 'header',
-        name: 'x-auth-token',
-        description: 'Statik və ya login token, Bearer olmadan',
-      },
-      apiKeyAuth: {
-        type: 'apiKey',
-        in: 'header',
-        name: 'static-access',
-        description: 'Statik API açarı',
-      },
+      BearerAuth: {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+        description: 'Bura login olanda gələn accessToken-i birbaşa yapışdır (Başına Bearer yazmağa ehtiyac yoxdur, Swagger özü qoyacaq)',
+      }
     },
   },
+  // Bütün endpoint-lərdə bu təhlükəsizlik qaydası keçərli olsun
   security: [
     {
-      customAuth: [],
-    },
-    {
-      apiKeyAuth: [],
-    },
+      BearerAuth: [],
+    }
   ],
 };
 
 const options: swaggerJsdoc.Options = {
   swaggerDefinition,
-  // Yeni qovluq strukturuna uyğun .yaml fayllarının oxunma yolu
-  // docs qovluğunun içində və ya onun alt qovluqlarında olan bütün .yaml-ları oxuyacaq
-  apis: ['./src/swagger/docs/**/*.yaml'], 
+  apis: [
+    './swagger/docs/**/*.yaml',
+    './src/swagger/docs/**/*.yaml',
+    './modules/**/*.yaml',
+    './src/modules/**/*.yaml'
+  ], 
 };
 
 const swaggerDocs = swaggerJsdoc(options);
 
 export function setupSwagger(app: Express): void {
-  // Swagger UI route-u
-  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
+  const swaggerUiOptions = {
+    swaggerOptions: {
+      withCredentials: true,
+      persistAuthorization: true
+    }
+  };
 
-  // JSON formatında görmək üçün
+  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs, swaggerUiOptions));
+
   app.get('/swagger.json', (req: Request, res: Response) => {
     res.setHeader('Content-Type', 'application/json');
     res.send(swaggerDocs);

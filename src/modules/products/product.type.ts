@@ -1,7 +1,8 @@
 export interface ProductAttributes {
   id: number;
   slug: string; // URL üçün 
-  //images: string; 
+  coverImage: string; 
+  images: string[];
   titleAz: string;
   titleRu: string;
   titleEn: string;
@@ -10,8 +11,8 @@ export interface ProductAttributes {
   descriptionEn: string | null;
   price: number; 
   discountPrice: number | null; //kohne qiymet
-  //categoryId: number;
-  //brandId: number;
+  categoryId: number;
+  brandId: number;
   stock: number;
   installmentPrice: number; // Aylıq taksit ödənişi
   //installmentMonths: string; // Keçərli olan aylar

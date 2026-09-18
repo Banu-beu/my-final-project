@@ -8,6 +8,9 @@ import {
 
 import { Op } from "sequelize"; 
 import { Products, validateProduct } from "./product.model";
+import { Categories } from "../categories/category.model";
+import { Brands } from "../brands/brand.model";
+import { deleteManyOldImages, deleteSingleOldImage } from "../../utils/deleteOldImages";
 
 export const allProducts = async (req: Request, res: Response) => {
   try {
@@ -86,6 +89,16 @@ export const allProducts = async (req: Request, res: Response) => {
     }
 
     const products = await Products.findAll({
+      include: [
+        { 
+          model: Brands, 
+          as: "brand"
+        },
+        { 
+          model: Categories, 
+          as: "category" 
+        }
+      ],
       where: whereCondition,
       order: orderCondition
     });
@@ -124,8 +137,23 @@ export const createProduct = async (req: Request, res: Response) => {
       return res.status(400).json(errorMessage("Validate error", error));
     }
 
-    const product = await Products.create(req.body);
-    res.status(200).json(createMessage("Product", product));
+    const files = req.files as { [fieldname: string]: Express.Multer.File[] } | undefined;
+
+    // Şəkil yollarını fayllardan götürürük
+    const coverImage = files?.coverImage?.[0]?.path;
+    const images = files?.images?.map((file) => file.path) || [];
+
+    if (!coverImage) {
+      return res.status(400).json(errorMessage("Örtük şəkli (coverImage) mütləqdir"));
+    }
+
+    const product = await Products.create({
+      ...req.body,
+      coverImage,
+      images,
+    });
+
+    res.status(201).json(createMessage("Product", product));
   } catch (error) {
     res.status(500).json(errorMessage("Something went wrong", error));
   }
@@ -143,7 +171,22 @@ export const editProduct = async (req: Request, res: Response) => {
       return res.status(404).json(errorMessage("Product not found"));
     }
 
-    await product.update(req.body);
+    const files = req.files as { [fieldname: string]: Express.Multer.File[] } | undefined;
+    const updateData: any = { ...req.body };
+
+    // Yeni coverImage gəlibsə: köhnəsini sil, yenisini mənimsət
+    if (files?.coverImage?.[0]) {
+      deleteSingleOldImage(product.coverImage);
+      updateData.coverImage = files.coverImage[0].path;
+    }
+
+    // Yeni əlavə şəkillər gəlibsə: köhnələri sil, yeniləri mənimsət
+    if (files?.images && files.images.length > 0) {
+      deleteManyOldImages(product.images);
+      updateData.images = files.images.map((file) => file.path);
+    }
+
+    await product.update(updateData);
     res.status(200).json(editMessage("Product updated", product));
   } catch (error) {
     res.status(500).json(errorMessage("Something went wrong", error));
@@ -156,6 +199,10 @@ export const deleteProduct = async (req: Request, res: Response) => {
     if (!product) {
       return res.status(404).json(errorMessage("Product not found"));
     }
+
+    // Bazadan silməzdən əvvəl diskdəki faylları silirik
+    deleteSingleOldImage(product.coverImage);
+    deleteManyOldImages(product.images);
 
     await product.destroy();
     res.status(200).json(deleteMessage("Product", product));
