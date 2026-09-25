@@ -1,0 +1,135 @@
+paths:
+  /blog:
+    get:
+      summary: Bütün bloqların (kampaniyaların) siyahısı, pagination ilə
+      tags: [Blog]
+      security: []
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer, example: 1 }
+        - name: limit
+          in: query
+          schema: { type: integer, example: 10 }
+      responses:
+        200:
+          description: Bloqlar tapıldı
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  totalCount: { type: integer }
+                  totalPages: { type: integer }
+                  currentPage: { type: integer }
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Blog'
+
+    post:
+      summary: Yeni bloq/kampaniya yaradır (Admin, slug titleAz-dan avtomatik yaranır)
+      tags: [Blog]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/BlogInput'
+      responses:
+        201:
+          description: Bloq yaradıldı
+        400:
+          description: Validasiya xətası / coverImage göndərilməyib
+        403:
+          description: Yalnız admin
+
+  /blog/{id}:
+    get:
+      summary: Tək bloq (id VƏ YA slug ilə axtarır)
+      tags: [Blog]
+      security: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+          description: "Rəqəm olarsa id kimi, mətn olarsa slug kimi axtarılır"
+      responses:
+        200:
+          description: Bloq tapıldı
+        404:
+          description: Blog not found
+
+    put:
+      summary: Bloqu redaktə edir (Admin)
+      tags: [Blog]
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/BlogInput'
+      responses:
+        200:
+          description: Blog updated
+        404:
+          description: Blog not found
+        403:
+          description: Yalnız admin
+
+    delete:
+      summary: Bloqu silir (Admin)
+      tags: [Blog]
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        200:
+          description: Blog deleted
+        404:
+          description: Blog not found
+        403:
+          description: Yalnız admin
+
+components:
+  schemas:
+    Blog:
+      type: object
+      properties:
+        id: { type: integer }
+        slug: { type: string }
+        coverImage: { type: string }
+        titleAz: { type: string }
+        titleRu: { type: string }
+        titleEn: { type: string }
+        contentAz: { type: string }
+        contentRu: { type: string }
+        contentEn: { type: string }
+
+    BlogInput:
+      type: object
+      required: [coverImage, titleAz, titleRu, titleEn, contentAz, contentRu, contentEn]
+      properties:
+        coverImage:
+          type: string
+          format: binary
+        titleAz: { type: string, example: "Qara Cümə Endirimi" }
+        titleRu: { type: string, example: "Черная пятница" }
+        titleEn: { type: string, example: "Black Friday Sale" }
+        contentAz: { type: string, example: "Bu il böyük endirimlər sizi gözləyir..." }
+        contentRu: { type: string }
+        contentEn: { type: string }

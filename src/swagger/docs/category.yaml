@@ -1,0 +1,114 @@
+paths:
+  /category:
+    get:
+      summary: Bütün kateqoriyaların siyahısı
+      tags: [Categories]
+      security: []
+      responses:
+        200:
+          description: Kateqoriyalar tapıldı
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Category'
+
+    post:
+      summary: Yeni kateqoriya yaradır (Admin, slug titleAz-dan avtomatik yaranır)
+      tags: [Categories]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CategoryInput'
+      responses:
+        200:
+          description: Kateqoriya yaradıldı
+        400:
+          description: Validasiya xətası
+        403:
+          description: Yalnız admin
+
+  /category/{id}:
+    get:
+      summary: Tək kateqoriya (id ilə)
+      tags: [Categories]
+      security: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        200:
+          description: Kateqoriya tapıldı
+        404:
+          description: Category not found
+
+    put:
+      summary: Kateqoriyanı redaktə edir (Admin)
+      tags: [Categories]
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CategoryInput'
+      responses:
+        200:
+          description: Category updated
+        404:
+          description: Category not found
+        403:
+          description: Yalnız admin
+
+    delete:
+      summary: Kateqoriyanı silir (Admin)
+      tags: [Categories]
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        200:
+          description: Category deleted
+        404:
+          description: Category not found
+        403:
+          description: Yalnız admin
+
+components:
+  schemas:
+    Category:
+      type: object
+      properties:
+        id: { type: integer }
+        slug: { type: string }
+        titleAz: { type: string }
+        titleRu: { type: string }
+        titleEn: { type: string }
+
+    CategoryInput:
+      type: object
+      required: [titleAz, titleRu, titleEn]
+      properties:
+        titleAz: { type: string, example: "Ağıllı Telefonlar" }
+        titleRu: { type: string, example: "Смартфоны" }
+        titleEn: { type: string, example: "Smartphones" }

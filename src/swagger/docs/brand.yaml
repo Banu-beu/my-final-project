@@ -1,0 +1,114 @@
+paths:
+  /brand:
+    get:
+      summary: Bütün brendlərin siyahısı
+      tags: [Brands]
+      security: []
+      responses:
+        200:
+          description: Brendlər tapıldı
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Brand'
+
+    post:
+      summary: Yeni brend yaradır (Admin, slug titleAz-dan avtomatik yaranır)
+      tags: [Brands]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BrandInput'
+      responses:
+        200:
+          description: Brend yaradıldı
+        400:
+          description: Validasiya xətası
+        403:
+          description: Yalnız admin
+
+  /brand/{id}:
+    get:
+      summary: Tək brend (id ilə)
+      tags: [Brands]
+      security: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        200:
+          description: Brend tapıldı
+        404:
+          description: Brand not found
+
+    put:
+      summary: Brendi redaktə edir (Admin)
+      tags: [Brands]
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BrandInput'
+      responses:
+        200:
+          description: Brand updated
+        404:
+          description: Brand not found
+        403:
+          description: Yalnız admin
+
+    delete:
+      summary: Brendi silir (Admin)
+      tags: [Brands]
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        200:
+          description: Brand deleted
+        404:
+          description: Brand not found
+        403:
+          description: Yalnız admin
+
+components:
+  schemas:
+    Brand:
+      type: object
+      properties:
+        id: { type: integer }
+        slug: { type: string }
+        titleAz: { type: string }
+        titleRu: { type: string }
+        titleEn: { type: string }
+
+    BrandInput:
+      type: object
+      required: [titleAz, titleRu, titleEn]
+      properties:
+        titleAz: { type: string, example: "Nike" }
+        titleRu: { type: string, example: "Найк" }
+        titleEn: { type: string, example: "Nike" }

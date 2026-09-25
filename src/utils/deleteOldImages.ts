@@ -2,6 +2,13 @@ import fs from "fs";
 import path from "path";
 
 export function deleteManyOldImages(imagePaths: string[]): void {
+
+ if(!Array.isArray(imagePaths) || imagePaths.length===0){
+  console.log("There is no old picture to delete");
+  return;
+  
+ }
+
   imagePaths.forEach((item: string) => {
     const fullImagePath: string = path.join(item);
     fs.unlink(fullImagePath, (err: NodeJS.ErrnoException | null) => {

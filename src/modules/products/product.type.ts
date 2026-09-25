@@ -1,6 +1,6 @@
 export interface ProductAttributes {
   id: number;
-  slug: string; // URL üçün 
+  slug: string; 
   coverImage: string; 
   images: string[];
   titleAz: string;
@@ -10,16 +10,15 @@ export interface ProductAttributes {
   descriptionRu: string | null;
   descriptionEn: string | null;
   price: number; 
-  discountPrice: number | null; //kohne qiymet
-  categoryId: number;
-  brandId: number;
+  discountPrice: number | null; 
+  categoryId: number | null;
+  brandId: number | null;
   stock: number;
-  installmentPrice: number; // Aylıq taksit ödənişi
-  //installmentMonths: string; // Keçərli olan aylar
-  isAction: boolean; // Kampaniyadadir?
-  actionTextAz: string | null; // Kampaniya yazısı (məs: "0 0 18 ay")
+  color:string | null;
+  installmentMonths: number[]; 
+  installmentOptions?:{months:number;monthlyPrice:number}[]
+  isAction: boolean; 
+  actionTextAz: string | null; 
   actionTextRu: string | null;
   actionTextEn: string | null;
-  rating: number;
-  reviewCount: number; // Rəy sayı
 }

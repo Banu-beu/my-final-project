@@ -48,7 +48,7 @@ Categories.init(
 
 const validateCategory = (data: Partial<CategoryAttributes>) => {
   const schema = Joi.object({
-    slug: Joi.string().required(),
+    slug: Joi.string().optional(),
     titleAz: Joi.string().trim().min(2).required(),
     titleRu: Joi.string().trim().min(2).required(),
     titleEn: Joi.string().trim().min(2).required(),

@@ -10,6 +10,7 @@ class Orders extends Model<OrderAttributes, OrderCreationAttributes>
   public id!: number;
   public userId!: number;
   public address!: string;
+  public products!: {productId: number; quantity: number; price:number }[]
   public totalAmount!: number;
   public status!: "pending" | "confirmed" | "delivered" | "cancelled";
 }
@@ -32,6 +33,22 @@ Orders.init(
       type: DataTypes.STRING,
       allowNull: false,
     },
+    products:{
+      type:DataTypes.JSON,
+      allowNull:false,
+      defaultValue:[],
+      get(){
+        const raw=this.getDataValue("products");
+        if(typeof raw==="string"){
+          try {
+            return JSON.parse(raw)
+          } catch {
+            return []
+          }
+        }
+        return raw || []
+      },
+    },
     totalAmount: {
       type: DataTypes.FLOAT,
       allowNull: false,
@@ -49,6 +66,13 @@ const validateOrder = (data: Partial<OrderAttributes>) => {
   const schema = Joi.object({
     userId: Joi.number().optional(),
     address: Joi.string().allow("", null).optional(),
+    products:Joi.array().items(
+      Joi.object({
+        productId:Joi.number().required(),
+        quantity:Joi.number().required(),
+        price:Joi.number().required()
+      })
+    ).optional(),
     totalAmount: Joi.number().optional(),
     status: Joi.string().valid("pending", "confirmed", "delivered", "cancelled").optional(),
   });

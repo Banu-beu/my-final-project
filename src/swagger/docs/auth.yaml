@@ -1,0 +1,127 @@
+paths:
+  /auth/register:
+    post:
+      summary: Yeni istifadəçi qeydiyyatı
+      tags: [Auth]
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [fullname, email, password]
+              properties:
+                fullname:
+                  type: string
+                  example: "Turan Məmmədov"
+                email:
+                  type: string
+                  format: email
+                  example: "turan@gmail.com"
+                password:
+                  type: string
+                  example: "turan123"
+                phone:
+                  type: string
+                  example: "0501234567"
+      responses:
+        201:
+          description: Qeydiyyat uğurludur
+        400:
+          description: Validasiya xətası / email artıq mövcuddur
+
+  /auth/login:
+    post:
+      summary: Sistemə giriş edib token almaq
+      tags: [Auth]
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: "turan@gmail.com"
+                password:
+                  type: string
+                  example: "turan123"
+      responses:
+        200:
+          description: Giriş uğurludur, accessToken qaytarılır (refreshToken httpOnly cookie kimi göndərilir)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  accessToken:
+                    type: string
+        400:
+          description: Şifrə yanlışdır
+        404:
+          description: İstifadəçi tapılmadı
+
+  /auth/logout:
+    post:
+      summary: Sistemdən çıxış
+      tags: [Auth]
+      responses:
+        200:
+          description: Uğurla çıxış edildi
+        401:
+          description: Token yoxdur/etibarsızdır
+
+  /auth/forgot-password:
+    post:
+      summary: Şifrə sıfırlama linki email-ə göndərir
+      tags: [Auth]
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: "turan@gmail.com"
+      responses:
+        200:
+          description: Əgər email qeydiyyatlıdırsa, link göndərildi
+        400:
+          description: Email göndərilməyib
+
+  /auth/reset-password:
+    post:
+      summary: Email-dəki link ilə yeni şifrə qoymaq
+      tags: [Auth]
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token, newPassword]
+              properties:
+                token:
+                  type: string
+                  example: "forgot-password sorğusundan email-ə gələn token"
+                newPassword:
+                  type: string
+                  example: "yeniSifre123"
+      responses:
+        200:
+          description: Şifrə uğurla dəyişdirildi
+        400:
+          description: Token yanlışdır, vaxtı bitib, ya da şifrə çox qısadır

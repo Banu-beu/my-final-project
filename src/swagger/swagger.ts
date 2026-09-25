@@ -12,13 +12,12 @@ const swaggerDefinition = {
   servers: [
     {
       url: process.env.RAILWAY_STATIC_URL 
-        ? `https://${process.env.RAILWAY_STATIC_URL}/api/v1` 
-        : 'http://localhost:3000/api/v1',
-      description: 'Əsas API Serveri (Bütün sorğuların başına /api/v1 qoyur)'
+        ? `https://${process.env.RAILWAY_STATIC_URL}` 
+        : 'http://localhost:3000',
+      description: 'Əsas API Serveri'
     },
   ],
   components: {
-    // 👇 BURANI TAMAMİLƏ SƏNİN STANDARTA UYĞUN DƏYİŞDİK
     securitySchemes: {
       BearerAuth: {
         type: 'http',
@@ -28,7 +27,6 @@ const swaggerDefinition = {
       }
     },
   },
-  // Bütün endpoint-lərdə bu təhlükəsizlik qaydası keçərli olsun
   security: [
     {
       BearerAuth: [],

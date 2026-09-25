@@ -9,6 +9,6 @@ router.get('/:id',singleCategory)
 router.get('/',allCategories)
 router.post('/',authMiddleware, isAdmin,createCategory)
 router.put('/:id',authMiddleware, isAdmin,editCategory)
-router.delete(':id',authMiddleware, isAdmin,deleteCategory)
+router.delete('/:id',authMiddleware, isAdmin,deleteCategory)
 
 export default router;

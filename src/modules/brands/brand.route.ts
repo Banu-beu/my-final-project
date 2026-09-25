@@ -9,6 +9,6 @@ router.get('/:id',singleBrand)
 router.get('/',allBrands)
 router.post('/',authMiddleware, isAdmin,createBrand)
 router.put('/:id',authMiddleware, isAdmin,editBrand)
-router.delete(':id',authMiddleware, isAdmin,deleteBrand)
+router.delete('/:id',authMiddleware, isAdmin,deleteBrand)
 
 export default router;

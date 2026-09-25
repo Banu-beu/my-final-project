@@ -1,4 +1,5 @@
-import { Request, Response } from "express";
+import { Request, Response,NextFunction } from "express";
+import slugify from "slugify"
 import {
   createMessage,
   errorMessage,
@@ -18,6 +19,11 @@ export const allProducts = async (req: Request, res: Response) => {
       search, 
       sort, 
       stock,
+      page,
+      limit,
+      brandId,
+      categoryId,
+      color,
       priceUnder, 
       priceOver,  
       minPrice,   
@@ -26,10 +32,7 @@ export const allProducts = async (req: Request, res: Response) => {
     stockOver,  
       minStock,   
       maxStock  ,
-     ratingUnder, 
-    ratingOver,  
-      minRating,   
-      maxRating    
+      
     } = req.query;
 
     let whereCondition: any = {};
@@ -43,6 +46,15 @@ export const allProducts = async (req: Request, res: Response) => {
       ];
     }
 
+    if(categoryId){
+      whereCondition.categoryId=Number(categoryId)
+    }
+    if(brandId){
+      whereCondition.brandId=Number(brandId)
+    }
+    if(color){
+      whereCondition.color=color
+    }
     if (priceUnder) {
       whereCondition.price = { [Op.lte]: Number(priceUnder) };
     } 
@@ -55,17 +67,6 @@ export const allProducts = async (req: Request, res: Response) => {
       if (maxPrice) whereCondition.price[Op.lte] = Number(maxPrice);
     }
  
-    if (ratingUnder) {
-      whereCondition.rating = { [Op.lte]: Number(ratingUnder) };
-    } 
-    else if (ratingOver) {
-      whereCondition.rating = { [Op.gte]: Number(ratingOver) };
-    } 
-    else if (minRating || maxRating) {
-      whereCondition.rating = {};
-      if (minRating) whereCondition.rating[Op.gte] = Number(minRating);
-      if (maxRating) whereCondition.rating[Op.lte] = Number(maxRating);
-    }
 
 
     if (stockUnder) {
@@ -88,7 +89,13 @@ export const allProducts = async (req: Request, res: Response) => {
       else if (sort === "alphabetical") orderCondition = [["titleAz", "ASC"]];
     }
 
-    const products = await Products.findAll({
+
+    const currentPage=Number(page) || 1
+    const pageLimit=Number(limit) || 12
+    const offset=(currentPage-1)*pageLimit
+    
+
+    const {count,rows} = await Products.findAndCountAll({
       include: [
         { 
           model: Brands, 
@@ -100,12 +107,17 @@ export const allProducts = async (req: Request, res: Response) => {
         }
       ],
       where: whereCondition,
-      order: orderCondition
+      order: orderCondition,
+      limit:pageLimit,
+      offset,
+      distinct:true
     });
 
     res.status(200).json({
-      count: products.length,
-      data: products
+      totalCount: count,
+      totalPages: Math.ceil(count/pageLimit),
+      currentPage,
+      data:rows
     });
 
   } catch (error) {
@@ -114,11 +126,14 @@ export const allProducts = async (req: Request, res: Response) => {
   }
 };
 
-export const singleProduct = async (req: Request, res: Response) => {
+export const singleProduct = async (req: Request, res: Response,next:NextFunction) => {
   try {
-    const id = Number(req.params.id);
+    const param=req.params.id
+    const isNumeric=!isNaN(Number(param))
 
-    const product = await Products.findByPk(id);
+    const product = isNumeric
+    ?await Products.findByPk(Number(param))
+    :await Products.findOne({where:{slug:param}})
 
     if (!product) {
       return res.status(404).json({ message: "Product not found" });
@@ -126,12 +141,17 @@ export const singleProduct = async (req: Request, res: Response) => {
 
     res.status(200).json({ data: product });
   } catch (error) {
-    console.log(error);
-  }
+    next(error)  }
 };
 
-export const createProduct = async (req: Request, res: Response) => {
+export const createProduct = async (req: Request, res: Response,next:NextFunction) => {
   try {
+        if (typeof req.body.installmentMonths === "string") {
+      req.body.installmentMonths = req.body.installmentMonths
+        .split(",")
+        .map((m: string) => Number(m.trim()))
+        .filter((m: number) => !isNaN(m));
+    }
     const { error } = validateProduct(req.body);
     if (error) {
       return res.status(400).json(errorMessage("Validate error", error));
@@ -139,28 +159,36 @@ export const createProduct = async (req: Request, res: Response) => {
 
     const files = req.files as { [fieldname: string]: Express.Multer.File[] } | undefined;
 
-    // Şəkil yollarını fayllardan götürürük
     const coverImage = files?.coverImage?.[0]?.path;
     const images = files?.images?.map((file) => file.path) || [];
 
     if (!coverImage) {
-      return res.status(400).json(errorMessage("Örtük şəkli (coverImage) mütləqdir"));
+      return res.status(400).json(errorMessage("Coverimage is required"));
     }
+
+    const slug=slugify(req.body.titleAz,{lower:true,strict:true})
 
     const product = await Products.create({
       ...req.body,
+      slug,
       coverImage,
       images,
     });
 
     res.status(201).json(createMessage("Product", product));
   } catch (error) {
-    res.status(500).json(errorMessage("Something went wrong", error));
+    next(error)
   }
 };
 
-export const editProduct = async (req: Request, res: Response) => {
+export const editProduct = async (req: Request, res: Response,next:NextFunction) => {
   try {
+     if (typeof req.body.installmentMonths === "string") {
+      req.body.installmentMonths = req.body.installmentMonths
+        .split(",")
+        .map((m: string) => Number(m.trim()))
+        .filter((m: number) => !isNaN(m))
+    }
     const { error } = validateProduct(req.body);
     if (error) {
       return res.status(400).json(errorMessage("Validate error", error));
@@ -174,13 +202,16 @@ export const editProduct = async (req: Request, res: Response) => {
     const files = req.files as { [fieldname: string]: Express.Multer.File[] } | undefined;
     const updateData: any = { ...req.body };
 
-    // Yeni coverImage gəlibsə: köhnəsini sil, yenisini mənimsət
+    if(req.body.titleAz){
+      updateData.slug=slugify(req.body.titleAz,{lower:true,strict:true})
+    }
+
+
     if (files?.coverImage?.[0]) {
       deleteSingleOldImage(product.coverImage);
       updateData.coverImage = files.coverImage[0].path;
     }
 
-    // Yeni əlavə şəkillər gəlibsə: köhnələri sil, yeniləri mənimsət
     if (files?.images && files.images.length > 0) {
       deleteManyOldImages(product.images);
       updateData.images = files.images.map((file) => file.path);
@@ -189,24 +220,23 @@ export const editProduct = async (req: Request, res: Response) => {
     await product.update(updateData);
     res.status(200).json(editMessage("Product updated", product));
   } catch (error) {
-    res.status(500).json(errorMessage("Something went wrong", error));
+    next(error)
   }
 };
 
-export const deleteProduct = async (req: Request, res: Response) => {
+export const deleteProduct = async (req: Request, res: Response,next:NextFunction) => {
   try {
     const product = await Products.findByPk(Number(req.params.id));
     if (!product) {
       return res.status(404).json(errorMessage("Product not found"));
     }
 
-    // Bazadan silməzdən əvvəl diskdəki faylları silirik
     deleteSingleOldImage(product.coverImage);
     deleteManyOldImages(product.images);
 
     await product.destroy();
     res.status(200).json(deleteMessage("Product", product));
   } catch (error) {
-    res.status(500).json(errorMessage("Something went wrong", error));
+    next(error)
   }
 };

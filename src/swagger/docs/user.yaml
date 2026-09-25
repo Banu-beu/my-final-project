@@ -1,173 +1,209 @@
-openapi: 3.0.0
-info:
-  title: User və Auth API Sənədləşməsi
-  version: 1.0.0
-  description: İstifadəçi qeydiyyatı, giriş-çıxış və idarəetmə endpointləri.
-
 paths:
-  # 🔓 QEYDİYYAT VƏ GİRİŞ (HAMI ÜÇÜN AÇIQ - /api/v1/...)
-  /register:
-    post:
-      summary: Yeni istifadəçi qeydiyyatı
-      tags: [Auth]
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [fullname, email, password]
-              properties:
-                fullname:
-                  type: string
-                  example: "Banu Abdullazade"
-                email:
-                  type: string
-                  format: email
-                  example: "banu@example.com"
-                password:
-                  type: string
-                  example: "password123"
-      responses:
-        201:
-          description: Uğurlu qeydiyyat
-        400:
-          description: Validasiya xətası
-
-  /login:
-    post:
-      summary: Sistemə giriş edib token almaq
-      tags: [Auth]
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [email, password]
-              properties:
-                email:
-                  type: string
-                  format: email
-                  example: "banu@example.com"
-                password:
-                  type: string
-                  example: "password123"
+  /user/me:
+    get:
+      summary: Öz profilini görmək (statistika ilə birlikdə)
+      tags: [ User ]
+      security:
+      - BearerAuth: []
       responses:
         200:
-          description: Giriş uğurlu
+          description: Profil tapıldı
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  message:
-                    type: string
-                    example: "Login is successfull"
-                  accessToken:
-                    type: string
-                  refreshToken:
-                    type: string
-        400:
-          description: Yanlış məlumatlar
-
-  /logout:
-    post:
-      summary: Sistemdən çıxış etmək
-      tags: [Auth]
-      security:
-        - BearerAuth: []
-      responses:
-        200:
-          description: Çıxış uğurlu
-        401:
-          description: Autentifikasiya olunmayıb
-
-  # 🔐 İSTİFADƏÇİ İDARƏETMƏSİ (ADMIN ENDPOINTLƏRİ - /api/v1/ad/user/...)
-  /user:
-    get:
-      summary: Bütün istifadəçilərin siyahısı (Yalnız Admin)
-      tags: [Users]
-      security:
-        - BearerAuth: []
-      responses:
-        200:
-          description: İstifadəçilər uğurla gətirildi
-        401:
-          description: Token tapılmadı və ya keçərsizdir
-        403:
-          description: İcazə yoxdur (Admin deyilsiniz)
-
-  /user/{id}:
-    get:
-      summary: ID-yə görə tək istifadəçi məlumatı (Yalnız Admin)
-      tags: [Users]
-      security:
-        - BearerAuth: []
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-      responses:
-        200:
-          description: İstifadəçi tapıldı
+                  data:
+                    allOf:
+                    - $ref: '#/components/schemas/User'
+                    - type: object
+                      properties:
+                        stats:
+                          type: object
+                          properties:
+                            totalOrders: { type: integer }
+                            totalSpent: { type: integer }
+                            favoritesCount: { type: integer }
+                            basketItemsCount: { type: integer }
         404:
-          description: İstifadəçi tapılmadı
+          description: User not found
 
     put:
-      summary: İstifadəçi məlumatlarını yeniləmək (Yalnız Admin)
-      tags: [Users]
+      summary: Profil məlumatlarını redaktə etmək (ad, telefon, email)
+      tags: [ User ]
       security:
-        - BearerAuth: []
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
+      - BearerAuth: []
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UserUpdateInput'
+              type: object
+              properties:
+                fullname: { type: string, example: "Turan Məmmədov" }
+                phone: { type: string, example: "0501234567" }
+                email: { type: string, example: "turan@gmail.com" }
       responses:
         200:
-          description: İstifadəçi uğurla yeniləndi
+          description: Profile updated
+        400:
+          description: Email artıq istifadə olunur / Google hesabının email-i dəyişdirilə bilməz
+        404:
+          description: User not found
+
+  /user/change-password:
+    put:
+      summary: Şifrəni dəyişmək (köhnə şifrə yoxlanılır)
+      tags: [ User ]
+      security:
+      - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [ currentPassword, newPassword ]
+              properties:
+                currentPassword: { type: string, example: "koneSifre123" }
+                newPassword: { type: string, example: "yeniSifre123" }
+      responses:
+        200:
+          description: Şifrə dəyişdirildi
+        400:
+          description: Hazırkı şifrə yanlışdır / Google hesabının şifrəsi yoxdur
+
+  /user/image:
+    post:
+      summary: Profil şəkli yükləmək (köhnəsi avtomatik silinir)
+      tags: [ User ]
+      security:
+      - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [ image ]
+              properties:
+                image:
+                  type: string
+                  format: binary
+      responses:
+        200:
+          description: Profil şəkli yükləndi
+        400:
+          description: Şəkil göndərilməyib
 
     delete:
-      summary: İstifadəçini silmək (Yalnız Admin)
-      tags: [Users]
+      summary: Profil şəklini silmək
+      tags: [ User ]
       security:
-        - BearerAuth: []
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
+      - BearerAuth: []
       responses:
         200:
-          description: İstifadəçi silindi
+          description: Profil şəkli silindi
+        404:
+          description: Profil şəkliniz yoxdur
+
+  /user:
+    get:
+      summary: Bütün istifadəçilərin siyahısı (Admin)
+      tags: [ User ]
+      security:
+      - BearerAuth: []
+      responses:
+        200:
+          description: İstifadəçilər tapıldı
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/User'
+        403:
+          description: Yalnız admin
+
+  /user/{id}:
+    get:
+      summary: Tək istifadəçi (Admin)
+      tags: [ User ]
+      security:
+      - BearerAuth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema: { type: integer }
+      responses:
+        200:
+          description: İstifadəçi tapıldı
+        403:
+          description: Yalnız admin
+        404:
+          description: User not found
+
+    put:
+      summary: İstənilən istifadəçini redaktə edir (Admin - rolu da dəyişə bilər)
+      tags: [ User ]
+      security:
+      - BearerAuth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                fullname: { type: string }
+                email: { type: string }
+                phone: { type: string }
+                role: { type: string, enum: [ user, admin ] }
+      responses:
+        200:
+          description: User updated
+        403:
+          description: Yalnız admin
+        404:
+          description: User not found
+
+    delete:
+      summary: İstifadəçini silir (Admin)
+      tags: [ User ]
+      security:
+      - BearerAuth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema: { type: integer }
+      responses:
+        200:
+          description: User deleted
+        403:
+          description: Yalnız admin
+        404:
+          description: User not found
 
 components:
   schemas:
-    UserUpdateInput:
+    User:
       type: object
       properties:
-        fullname:
-          type: string
-          example: "Banu Abdullazade (Edited)"
-        email:
-          type: string
-          format: email
-          example: "banu.new@example.com"
-        phone:
-          type: string
-          example: "+994559876543"
-        role:
-          type: string
-          enum: [user, admin]
-          example: "admin"
+        id: { type: integer }
+        fullname: { type: string }
+        email: { type: string }
+        phone: { type: string, nullable: true }
+        role: { type: string, enum: [ user, admin ] }
+        registerMethod: { type: string, enum: [ form, googleAuth ] }
+        bonusPoints: { type: integer }
+        image: { type: string, nullable: true }

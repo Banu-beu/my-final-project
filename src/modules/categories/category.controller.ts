@@ -1,4 +1,5 @@
 import { Request, Response } from "express";
+import slugify from "slugify"
 import {
   createMessage,
   errorMessage,
@@ -12,8 +13,7 @@ export const allCategories = async (req: Request, res: Response) => {
     const categories = await Categories.findAll();
     res.status(200).json({ data: categories });
   } catch (error) {
-    console.log(error);
-  }
+res.status(500).json(errorMessage("Something went wrong", error));  }
 };
 
 export const singleCategory = async (req: Request, res: Response) => {
@@ -32,8 +32,7 @@ export const singleCategory = async (req: Request, res: Response) => {
 
     res.status(200).json({ data: category });
   } catch (error) {
-    console.log(error);
-  }
+res.status(500).json(errorMessage("Something went wrong", error));  }
 };
 
 export const createCategory = async (req: Request, res: Response) => {
@@ -43,7 +42,9 @@ export const createCategory = async (req: Request, res: Response) => {
       return res.status(400).json(errorMessage("Validate error", error));
     }
 
-    const category = await Categories.create(req.body);
+    const slug=slugify(req.body.titleAz,{lower:true,strict:true})
+
+    const category = await Categories.create({...req.body,slug});
     res.status(200).json(createMessage("Category", category));
   } catch (error) {
     res.status(500).json(errorMessage("Something went wrong", error));
@@ -62,7 +63,11 @@ export const editCategory = async (req: Request, res: Response) => {
       return res.status(404).json(errorMessage("Category not found"));
     }
 
-    await category.update(req.body);
+    const updateData:any={...req.body}
+    if(req.body.titleAz){
+      updateData.slug=slugify(req.body.titleAz,{lower:true,strict:true})
+    }
+    await category.update(updateData);
     res.status(200).json(editMessage("Category updated", category));
   } catch (error) {
     res.status(500).json(errorMessage("Something went wrong", error));

@@ -1,0 +1,58 @@
+paths:
+  /favorite/my:
+    get:
+      summary: İstifadəçinin favori (wishlist) məhsulları, tam detalları ilə
+      tags: [Favorites]
+      security:
+        - BearerAuth: []
+      responses:
+        200:
+          description: Favorilər tapıldı
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  count: { type: integer }
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Product'
+
+  /favorite/add/{productId}:
+    post:
+      summary: Məhsulu favorilərə əlavə et
+      tags: [Favorites]
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: productId
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        200:
+          description: Əlavə edildi
+        201:
+          description: Əlavə edildi (ilk favori)
+        400:
+          description: Bu məhsul artıq favorilərdədir
+        404:
+          description: Product not found
+
+  /favorite/remove/{productId}:
+    delete:
+      summary: Məhsulu favorilərdən çıxar
+      tags: [Favorites]
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: productId
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        200:
+          description: Çıxarıldı
+        404:
+          description: Favori siyahısı boşdur

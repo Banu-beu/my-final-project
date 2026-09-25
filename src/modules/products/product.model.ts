@@ -1,9 +1,9 @@
 import { DataTypes, Model, Optional } from "sequelize";
 import sequelize from "../../config/connection";
-import Joi from "joi";
+import Joi, { string } from "joi";
 import { ProductAttributes } from "./product.type";
 
-interface ProductCreationAttributes extends Optional<ProductAttributes, "id" | "rating" | "reviewCount" | "isAction"> {}
+interface ProductCreationAttributes extends Optional<ProductAttributes, "id" | "isAction"> {}
 
 class Products extends Model<ProductAttributes, ProductCreationAttributes>
   implements ProductAttributes {
@@ -11,7 +11,6 @@ class Products extends Model<ProductAttributes, ProductCreationAttributes>
   public slug!: string;
   public coverImage!: string;
   public images!: string[];
-
   public titleAz!: string;
   public titleRu!: string;
   public titleEn!: string;
@@ -23,13 +22,14 @@ class Products extends Model<ProductAttributes, ProductCreationAttributes>
   public categoryId!: number;
   public brandId!: number;
   public stock!: number;
+  public color!:string | null;
   public installmentPrice!: number;
-  //public installmentMonths!: string;
+  public installmentMonths!: number[];
+  public readonly installmentOprions?:{months:number;monthllyPrice:number}[]
   public isAction!: boolean;
   public actionTextAz!: string | null;
   public actionTextEn!: string | null;
   public actionTextRu!: string | null;
-  public rating!: number;
   public reviewCount!: number;
 }
 
@@ -52,6 +52,17 @@ Products.init(
     images: {
       type: DataTypes.JSON,
       defaultValue: [],
+      get() {
+        const raw=this.getDataValue("images")
+        if(typeof raw === "string"){
+          try{
+            return JSON.parse(raw)
+          }catch{
+            return[]
+          }
+        }
+        return raw || []
+      },
     },
     titleAz: { 
       type: DataTypes.STRING, 
@@ -88,25 +99,52 @@ Products.init(
     },
     categoryId: {
       type: DataTypes.INTEGER,
-      allowNull: false,
+      allowNull: true,
     },
     brandId: {
       type: DataTypes.INTEGER,
-      allowNull: false,
+      allowNull: true,
     },
     stock: { 
       type: DataTypes.INTEGER, 
       allowNull: false, 
       defaultValue: 0 
     },
-    installmentPrice: { 
-      type: DataTypes.INTEGER, 
-      allowNull: false 
+    color:{
+      type:DataTypes.STRING,
+      allowNull:true
     },
-    // installmentMonths: { 
-    //   type: DataTypes.STRING, 
-    //   allowNull: false 
-    // },
+
+    installmentMonths: { 
+      type: DataTypes.JSON, 
+      allowNull: false,
+      get(){
+        const raw=this.getDataValue("installmentMonths")
+        if(typeof raw === "string"){
+          try {
+            return JSON.parse(raw)
+          } catch (error) {
+            return[]
+          }
+        }
+        return raw || []
+      }
+    },
+      installmentOptions: {
+      type: DataTypes.VIRTUAL,
+      get() {
+        const price = this.getDataValue("price") || 0;
+        const rawMonths=this.getDataValue("installmentMonths") as any
+        const months: number[] = typeof rawMonths==="string"
+        ?JSON.parse(rawMonths)
+        :(rawMonths || [])
+
+        return months.map((month: number) => ({
+          months: month,
+          monthlyPrice: Math.ceil(price / month),
+        }));
+      },
+    },
     isAction: {
       type: DataTypes.BOOLEAN,
       defaultValue: false,
@@ -122,22 +160,17 @@ Products.init(
     actionTextEn: {
       type: DataTypes.STRING,
       allowNull: true,
-    },
-    rating: {
-      type: DataTypes.DECIMAL(2, 1),
-      defaultValue: 0.0,
-    },
-    reviewCount: {
-      type: DataTypes.INTEGER,
-      defaultValue: 0,
-    },
+    }
   },
+  
+ 
+  
   { sequelize, modelName: "products" }
 );
 
 const validateProduct = (data: Partial<ProductAttributes>) => {
   const schema = Joi.object({
-    slug: Joi.string().required(),
+    slug: Joi.string().optional(),
     coverImage: Joi.string().optional(),
     images: Joi.array().items(Joi.string()).optional(),
     titleAz: Joi.string().optional(),
@@ -151,14 +184,12 @@ const validateProduct = (data: Partial<ProductAttributes>) => {
     categoryId: Joi.number().integer().required(),
     brandId: Joi.number().integer().required(),
     stock: Joi.number().integer().min(0).required(),
-    installmentPrice: Joi.number().positive().required(),
-   // installmentMonths: Joi.array().items(Joi.number().integer()).required(),
+    color: Joi.string().allow("", null).optional(),
+    installmentMonths: Joi.array().items(Joi.number().integer().positive()).required(),
     isAction: Joi.boolean().optional(),
     actionTextAz: Joi.string().allow("", null).optional(),
     actionTextRu: Joi.string().allow("", null).optional(),
     actionTextEn: Joi.string().allow("", null).optional(),
-    rating: Joi.number().min(0).max(5).optional(),
-    reviewCount: Joi.number().integer().min(0).optional(),
   });
 
   return schema.validate(data);

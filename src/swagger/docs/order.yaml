@@ -1,0 +1,136 @@
+paths:
+  /order/my:
+    get:
+      summary: İstifadəçinin öz sifarişlərinin siyahısı
+      tags: [Orders]
+      security:
+        - BearerAuth: []
+      responses:
+        200:
+          description: Sifarişlər tapıldı
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  count: { type: integer }
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Order'
+
+  /order/{id}:
+    get:
+      summary: Tək sifarişin detalı (öz sifarişidirsə istifadəçi, deyilsə yalnız admin)
+      tags: [Orders]
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        200:
+          description: Sifariş tapıldı
+        403:
+          description: Bu sifarişə baxmaq icazəniz yoxdur
+        404:
+          description: Order not found
+
+  /order:
+    get:
+      summary: Bütün sifarişlər (Admin)
+      tags: [Orders]
+      security:
+        - BearerAuth: []
+      responses:
+        200:
+          description: Sifarişlər tapıldı
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  count: { type: integer }
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Order'
+        403:
+          description: Yalnız admin
+
+  /order/{id}/status:
+    put:
+      summary: Sifarişin statusunu dəyişir (Admin)
+      tags: [Orders]
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status:
+                  type: string
+                  enum: [pending, confirmed, delivered, cancelled]
+                  example: "confirmed"
+      responses:
+        200:
+          description: Status yeniləndi
+        400:
+          description: Validasiya xətası
+        403:
+          description: Yalnız admin
+        404:
+          description: Order not found
+
+  /order/{id}/cancel:
+    put:
+      summary: İstifadəçi öz sifarişini ləğv edir (yalnız 'pending' olduqca)
+      tags: [Orders]
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        200:
+          description: Sifariş ləğv edildi
+        400:
+          description: Yalnız 'pending' statusundakı sifariş ləğv oluna bilər
+        403:
+          description: Bu sifarişi ləğv etmək icazəniz yoxdur
+        404:
+          description: Order not found
+
+components:
+  schemas:
+    Order:
+      type: object
+      properties:
+        id: { type: integer }
+        userId: { type: integer }
+        address: { type: string }
+        products:
+          type: array
+          items:
+            type: object
+            properties:
+              productId: { type: integer }
+              quantity: { type: integer }
+              price: { type: integer }
+        totalAmount: { type: integer }
+        status:
+          type: string
+          enum: [pending, confirmed, delivered, cancelled]

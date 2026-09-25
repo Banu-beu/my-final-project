@@ -8,10 +8,10 @@ interface BrandCreationAttributes extends Optional<BrandAttributes, "id"> {}
 class Brands extends Model<BrandAttributes, BrandCreationAttributes>
   implements BrandAttributes {
   public id!: number;
+  public slug!:string;
   public titleAz!: string;
   public titleRu!: string;
   public titleEn!: string; 
-  public logo!: string;
 }
 
 Brands.init(
@@ -20,6 +20,11 @@ Brands.init(
       type: DataTypes.INTEGER,
       autoIncrement: true,
       primaryKey: true,
+    },
+    slug:{
+      type:DataTypes.STRING,
+      allowNull:false,
+      unique:true
     },
     titleAz: {
       type: DataTypes.STRING,
@@ -33,10 +38,7 @@ Brands.init(
       type: DataTypes.STRING,
       allowNull: false,
     },
-    logo: {
-      type: DataTypes.STRING,
-      allowNull: false,
-    },
+
   },
   {
     sequelize,
@@ -46,10 +48,10 @@ Brands.init(
 
 const validateBrand = (data: Partial<BrandAttributes>) => {
   const schema = Joi.object({
+    slug:Joi.string().optional(),
     titleAz: Joi.string().trim().min(2).required(),
     titleRu: Joi.string().trim().min(2).required(),
     titleEn: Joi.string().trim().min(2).required(), 
-    logo: Joi.string().required(),
   });
 
   return schema.validate(data);

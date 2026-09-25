@@ -1,0 +1,121 @@
+paths:
+  /basket:
+    get:
+      summary: İstifadəçinin öz səbətini görmək
+      tags: [Basket]
+      security:
+        - BearerAuth: []
+      responses:
+        200:
+          description: Səbət tapıldı
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Basket'
+        404:
+          description: Səbət boşdur
+
+  /basket/add:
+    post:
+      summary: Səbətə məhsul əlavə et (varsa sayı artırılır, stok yoxlanılır)
+      tags: [Basket]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [productId, quantity]
+              properties:
+                productId: { type: integer, example: 5 }
+                quantity: { type: integer, example: 1 }
+      responses:
+        200:
+          description: Məhsul əlavə edildi
+        400:
+          description: Stokda kifayət qədər məhsul yoxdur / validasiya xətası
+        404:
+          description: Product not found
+
+  /basket/remove/{productId}:
+    delete:
+      summary: Səbətdən bir məhsulu çıxar
+      tags: [Basket]
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: productId
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        200:
+          description: Məhsul silindi
+        404:
+          description: Basket not found
+
+  /basket/clear:
+    delete:
+      summary: Bütün səbəti boşalt
+      tags: [Basket]
+      security:
+        - BearerAuth: []
+      responses:
+        200:
+          description: Səbət boşaldıldı
+        404:
+          description: Basket not found
+
+  /basket/checkout:
+    post:
+      summary: Səbəti sifarişə çevirir, bonus bal qazandırır, səbəti boşaldır
+      tags: [Basket]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [address]
+              properties:
+                address:
+                  type: string
+                  example: "Bakı, Nərimanov rayonu, 28 May küç. 10"
+      responses:
+        201:
+          description: Sifariş yaradıldı
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message: { type: string }
+                  data:
+                    $ref: '#/components/schemas/Order'
+                  earnedPoints: { type: integer }
+        400:
+          description: Səbət boşdur
+
+components:
+  schemas:
+    Basket:
+      type: object
+      properties:
+        id: { type: integer }
+        userId: { type: integer }
+        products:
+          type: array
+          items:
+            type: object
+            properties:
+              productId: { type: integer }
+              quantity: { type: integer }
+              price: { type: integer }
+        totalAmount: { type: integer }

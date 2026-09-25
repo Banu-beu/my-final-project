@@ -15,7 +15,7 @@ router.get("/:id", singleProduct);
 router.get("/", allProducts);
 
 router.post(
-  "/",
+  "/",  authMiddleware, isAdmin,
 upload.fields([
     { name: 'coverImage', maxCount: 1 },
     { name: 'images', maxCount: 5 }
@@ -25,8 +25,8 @@ upload.fields([
 
 router.put(
   "/:id",
-  // authMiddleware,
-  // isAdmin,
+  authMiddleware,
+  isAdmin,
 upload.fields([
     { name: 'coverImage', maxCount: 1 },
     { name: 'images', maxCount: 5 }

@@ -32,6 +32,17 @@ Baskets.init(
       type: DataTypes.JSON,
       allowNull: false,
       defaultValue: [],
+      get(){
+        const raw=this.getDataValue("products")
+        if(typeof raw === "string"){
+          try {
+            return JSON.parse(raw)
+          } catch {
+            return []
+          }
+        }
+        return raw || []
+      }
     },
     totalAmount: {
       type: DataTypes.FLOAT,
@@ -58,4 +69,12 @@ const validateBasket = (data: Partial<BasketAttributes>) => {
   return schema.validate(data);
 };
 
-export { Baskets, validateBasket };
+  const validateAddToBasket=(data:{productId?:number;quantity?:number})=>{
+    const schema=Joi.object({
+      productId:Joi.number().integer().required(),
+      quantity:Joi.number().integer().min(1).required()
+    })
+    return schema.validate(data)
+  }
+
+export { Baskets, validateBasket,validateAddToBasket };

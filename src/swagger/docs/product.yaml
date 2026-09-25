@@ -1,143 +1,108 @@
+
+
 paths:
-  # 📦 PRODUCTS (MƏHSULLAR VƏ ADMİN ENDPOİNTLƏRİ)
   /product:
     get:
-      summary: Bütün məhsulların siyahısı (Filtrlərlə)
+      summary: Bütün məhsulların siyahısı (filtr, axtarış, pagination ilə)
       tags: [Products]
+      security: []
       parameters:
         - name: search
           in: query
-          required: false
-          description: "Ad (Az/Ru/En) və ya slug üzrə axtarış"
-          schema:
-            type: string
+          schema: { type: string }
+          description: Ad (Az/Ru/En) və ya slug üzrə axtarış
         - name: sort
           in: query
-          required: false
-          description: "Çeşidləmə növü"
           schema:
             type: string
             enum: [cheapToExpensive, expensiveToCheap, alphabetical]
+        - name: page
+          in: query
+          schema: { type: integer, example: 1 }
+        - name: limit
+          in: query
+          schema: { type: integer, example: 12 }
+        - name: categoryId
+          in: query
+          schema: { type: integer }
+        - name: brandId
+          in: query
+          schema: { type: integer }
+        - name: color
+          in: query
+          schema: { type: string, example: "qara" }
         - name: priceUnder
           in: query
-          required: false
-          description: "Bu qiymətdən aşağı olanlar"
-          schema:
-            type: number
+          schema: { type: number }
         - name: priceOver
           in: query
-          required: false
-          description: "Bu qiymətdən yuxarı olanlar"
-          schema:
-            type: number
+          schema: { type: number }
         - name: minPrice
           in: query
-          required: false
-          description: "Minimum qiymət"
-          schema:
-            type: number
+          schema: { type: number }
         - name: maxPrice
           in: query
-          required: false
-          description: "Maksimum qiymət"
-          schema:
-            type: number
+          schema: { type: number }
         - name: stockUnder
           in: query
-          required: false
-          description: "Bu stok miqdarından aşağı olanlar"
-          schema:
-            type: integer
+          schema: { type: integer }
         - name: stockOver
           in: query
-          required: false
-          description: "Bu stok miqdarından yuxarı olanlar"
-          schema:
-            type: integer
+          schema: { type: integer }
         - name: minStock
           in: query
-          required: false
-          description: "Minimum stok sayı"
-          schema:
-            type: integer
+          schema: { type: integer }
         - name: maxStock
           in: query
-          required: false
-          description: "Maksimum stok sayı"
-          schema:
-            type: integer
-        - name: ratingUnder
-          in: query
-          required: false
-          description: "Bu reytinqdən aşağı olanlar"
-          schema:
-            type: number
-        - name: ratingOver
-          in: query
-          required: false
-          description: "Bu reytinqdən yuxarı olanlar"
-          schema:
-            type: number
-        - name: minRating
-          in: query
-          required: false
-          description: "Minimum reytinq"
-          schema:
-            type: number
-        - name: maxRating
-          in: query
-          required: false
-          description: "Maksimum reytinq"
-          schema:
-            type: number
+          schema: { type: integer }
       responses:
         200:
-          description: Məhsullar filtrlərə uyğun gətirildi
+          description: Məhsullar tapıldı
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  count:
-                    type: integer
-                    example: 1
+                  totalCount: { type: integer }
+                  totalPages: { type: integer }
+                  currentPage: { type: integer }
                   data:
                     type: array
                     items:
                       $ref: '#/components/schemas/Product'
         500:
           description: Server xətası
-
+ 
     post:
-      summary: Yeni məhsul yaradır (Admin)
+      summary: Yeni məhsul yaradır (Admin, slug titleAz-dan avtomatik yaranır)
       tags: [Products]
       security:
         - BearerAuth: []
-        - CookieAuth: []
       requestBody:
         required: true
         content:
-          application/json:
+          multipart/form-data:
             schema:
               $ref: '#/components/schemas/ProductInput'
       responses:
-        200:
-          description: Məhsul uğurla yaradıldı
+        201:
+          description: Məhsul yaradıldı
         400:
-          description: Validate error (Joi xətası)
-        500:
-          description: Server xətası
-
-  /products/{id}:
+          description: Validasiya xətası / coverImage göndərilməyib
+        403:
+          description: Yalnız admin
+ 
+  /product/{id}:
     get:
-      summary: ID-yə görə tək məhsul məlumatı
+      summary: Tək məhsul (id VƏ YA slug ilə axtarır)
       tags: [Products]
+      security: []
       parameters:
         - name: id
           in: path
           required: true
-          schema:
-            type: integer
+          schema: { type: string }
+          description: "Rəqəm olarsa id kimi, mətn olarsa slug kimi axtarılır (məs. 5 və ya iphone-15-pro)"
       responses:
         200:
           description: Məhsul tapıldı
@@ -150,160 +115,123 @@ paths:
                     $ref: '#/components/schemas/Product'
         404:
           description: Product not found
-
+ 
     put:
-      summary: Mövcud məhsulu redaktə edir (Admin)
+      summary: Məhsulu redaktə edir (Admin) - yalnız dəyişmək istədiyiniz sahələri göndərin
       tags: [Products]
       security:
         - BearerAuth: []
-        - CookieAuth: []
       parameters:
         - name: id
           in: path
           required: true
-          schema:
-            type: integer
+          schema: { type: string }
+          description: "Rəqəm (id) və ya slug ola bilər"
       requestBody:
         required: true
         content:
-          application/json:
+          multipart/form-data:
             schema:
               $ref: '#/components/schemas/ProductInput'
       responses:
         200:
           description: Product updated
         400:
-          description: Validate error
+          description: Validasiya xətası
         404:
           description: Product not found
-        500:
-          description: Server xətası
-
+        403:
+          description: Yalnız admin
+ 
     delete:
-      summary: Məhsulu silir (Admin)
+      summary: Məhsulu silir, şəkilləri də diskdən silir (Admin)
       tags: [Products]
       security:
         - BearerAuth: []
-        - CookieAuth: []
       parameters:
         - name: id
           in: path
           required: true
-          schema:
-            type: integer
+          schema: { type: string }
+          description: "Rəqəm (id) və ya slug ola bilər"
       responses:
         200:
           description: Product deleted
         404:
           description: Product not found
-        500:
-          description: Server xətası
-
+        403:
+          description: Yalnız admin
+ 
 components:
   schemas:
     Product:
       type: object
       properties:
-        id:
-          type: integer
-        slug:
-          type: string
-        titleAz:
-          type: string
-        titleRu:
-          type: string
-        titleEn:
-          type: string
-        descriptionAz:
-          type: string
-          nullable: true
-        descriptionEn:
-          type: string
-          nullable: true
-        descriptionRu:
-          type: string
-          nullable: true
-        price:
-          type: integer
-        discountPrice:
-          type: integer
-          nullable: true
-        categoryId:
-          type: integer
-        brandId:
-          type: integer
-        stock:
-          type: integer
-        installmentPrice:
-          type: integer
-        isAction:
-          type: boolean
-        actionTextAz:
-          type: string
-          nullable: true
-        actionTextRu:
-          type: string
-          nullable: true
-        actionTextEn:
-          type: string
-          nullable: true
-        rating:
-          type: number
-        reviewCount:
-          type: integer
-
+        id: { type: integer }
+        slug: { type: string }
+        coverImage: { type: string }
+        images:
+          type: array
+          items: { type: string }
+        titleAz: { type: string }
+        titleRu: { type: string }
+        titleEn: { type: string }
+        descriptionAz: { type: string, nullable: true }
+        descriptionRu: { type: string, nullable: true }
+        descriptionEn: { type: string, nullable: true }
+        price: { type: integer }
+        discountPrice: { type: integer, nullable: true }
+        categoryId: { type: integer }
+        brandId: { type: integer }
+        stock: { type: integer }
+        color: { type: string, nullable: true }
+        installmentMonths:
+          type: array
+          items: { type: integer }
+        installmentOptions:
+          type: array
+          description: "Hər ay seçimi üçün avtomatik hesablanmış aylıq ödəniş (price/months)"
+          items:
+            type: object
+            properties:
+              months: { type: integer }
+              monthlyPrice: { type: integer }
+        isAction: { type: boolean }
+        actionTextAz: { type: string, nullable: true }
+        actionTextRu: { type: string, nullable: true }
+        actionTextEn: { type: string, nullable: true }
+ 
     ProductInput:
       type: object
-      required: [slug, titleAz, titleRu, titleEn, price, categoryId, brandId, stock, installmentPrice]
+      required: [price, categoryId, brandId, stock, installmentMonths]
       properties:
-        slug:
+        coverImage:
           type: string
-          example: "iphone-15-pro"
-        titleAz:
-          type: string
-          example: "iPhone 15 Pro"
-        titleRu:
-          type: string
-          example: "iPhone 15 Pro Ru"
-        titleEn:
-          type: string
-          example: "iPhone 15 Pro En"
-        descriptionAz:
-          type: string
-          example: "Əla vəziyyətdə"
-        descriptionEn:
-          type: string
-          example: "In great condition"
-        descriptionRu:
-          type: string
-          example: "В отличном состоянии"
-        price:
-          type: integer
-          example: 2500
-        discountPrice:
-          type: integer
-          example: 2400
-        categoryId:
-          type: integer
-          example: 1
-        brandId:
-          type: integer
-          example: 2
-        stock:
-          type: integer
-          example: 15
-        installmentPrice:
-          type: integer
-          example: 210
-        isAction:
-          type: boolean
-          example: false
-        actionTextAz:
-          type: string
-          nullable: true
-        actionTextRu:
-          type: string
-          nullable: true
-        actionTextEn:
-          type: string
-          nullable: true
+          format: binary
+          description: Örtük şəkli (yaratmaq üçün mütləqdir)
+        images:
+          type: array
+          items:
+            type: string
+            format: binary
+          description: Əlavə şəkillər (maks 5 ədəd)
+        titleAz: { type: string, example: "Ağıllı Telefon" }
+        titleRu: { type: string, example: "Смартфон" }
+        titleEn: { type: string, example: "Smartphone" }
+        descriptionAz: { type: string }
+        descriptionRu: { type: string }
+        descriptionEn: { type: string }
+        price: { type: integer, example: 2500 }
+        discountPrice: { type: integer, example: 2400 }
+        categoryId: { type: integer, example: 1 }
+        brandId: { type: integer, example: 1 }
+        stock: { type: integer, example: 15 }
+        color: { type: string, example: "qara" }
+        installmentMonths:
+          type: array
+          items: { type: integer }
+          example: [3, 6, 12]
+        isAction: { type: boolean, example: false }
+        actionTextAz: { type: string }
+        actionTextRu: { type: string }
+        actionTextEn: { type: string }
